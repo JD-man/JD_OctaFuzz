@@ -3,6 +3,12 @@
 <JUCERPROJECT id="nP1E4W" name="OctaFuzz" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" pluginChannelConfigs="{1, 1}">
   <MAINGROUP id="MRBXNE" name="OctaFuzz">
+    <GROUP id="{9D1017CC-CEED-12C9-8B81-95D6F08744D7}" name="DSP">
+      <FILE id="kW7XyK" name="Fuzz.cpp" compile="1" resource="0" file="../../JD_DSP/OctaFuzz/Fuzz.cpp"/>
+      <FILE id="AIREzN" name="Fuzz.h" compile="0" resource="0" file="../../JD_DSP/OctaFuzz/Fuzz.h"/>
+      <FILE id="p42fZ2" name="Octaver.cpp" compile="1" resource="0" file="../../JD_DSP/OctaFuzz/Octaver.cpp"/>
+      <FILE id="rnemz8" name="Octaver.h" compile="0" resource="0" file="../../JD_DSP/OctaFuzz/Octaver.h"/>
+    </GROUP>
     <GROUP id="{EBA92B89-42D6-A134-DD27-523722DA81EC}" name="Source">
       <FILE id="pjLK3F" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
