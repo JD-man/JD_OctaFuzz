@@ -86,5 +86,10 @@ xcuserdata/
 **/xcshareddata/WorkspaceSettings.xcsettings
 
 JuceLibraryCode
+# JUCE 자동 생성 빌드 폴더 전체 무시
+Builds/
+
+# (옵션) 유저별 환경 설정 파일 무시
+*.user
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,xcode,c++
