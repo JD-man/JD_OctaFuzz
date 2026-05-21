@@ -95,8 +95,12 @@ void OctaFuzzAudioProcessor::changeProgramName (int index, const juce::String& n
 //==============================================================================
 void OctaFuzzAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+  oversampler->initProcessing(static_cast<size_t>(samplesPerBlock));
+  oversampler->reset();
+  
+  double oversampledRate = sampleRate * oversampler->getOversamplingFactor();
+  
+  fuzzModule.prepare(oversampledRate);
 }
 
 void OctaFuzzAudioProcessor::releaseResources()
