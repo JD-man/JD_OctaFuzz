@@ -95,6 +95,15 @@ void OctaFuzzAudioProcessor::changeProgramName (int index, const juce::String& n
 //==============================================================================
 void OctaFuzzAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+  const auto numChannels = juce::jmax(1, getTotalNumInputChannels());
+  
+  oversampler = std::make_unique<juce::dsp::Oversampling<float>>
+  (
+   numChannels,
+   2,
+   juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR
+  );
+  
   oversampler->initProcessing(static_cast<size_t>(samplesPerBlock));
   oversampler->reset();
   
