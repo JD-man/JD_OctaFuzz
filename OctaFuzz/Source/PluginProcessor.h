@@ -17,6 +17,8 @@
 class OctaFuzzAudioProcessor  : public juce::AudioProcessor
 {
   public:
+  juce::AudioProcessorValueTreeState apvts; // GUI 연동을 위해 public으로 생성
+  
   //==============================================================================
   OctaFuzzAudioProcessor();
   ~OctaFuzzAudioProcessor() override;
@@ -57,8 +59,8 @@ class OctaFuzzAudioProcessor  : public juce::AudioProcessor
   private:
   
   Fuzz fuzzModule;
-  
   std::unique_ptr<juce::dsp::Oversampling<float>> oversampler;
+  static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
   
   //==============================================================================
   JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OctaFuzzAudioProcessor)
