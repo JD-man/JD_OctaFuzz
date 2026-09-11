@@ -11,16 +11,10 @@
 
 //==============================================================================
 OctaFuzzAudioProcessor::OctaFuzzAudioProcessor()
-#ifndef JucePlugin_PreferredChannelConfigurations
-     : AudioProcessor (BusesProperties()
-                     #if ! JucePlugin_IsMidiEffect
-                      #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-                      #endif
-                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
-                     #endif
-                       )
-#endif
+: AudioProcessor (BusesProperties()
+                  .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
+                  .withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+apvts (*this, nullptr, "Parameters", createParameterLayout())
 {
 }
 
@@ -196,4 +190,20 @@ void OctaFuzzAudioProcessor::setStateInformation (const void* data, int sizeInBy
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new OctaFuzzAudioProcessor();
+}
+
+// 파라미터 정의 (ID: "FUZZ_AMOUNT", 기본값: 0.5, 범위: 0.0 ~ 1.0)
+juce::AudioProcessorValueTreeState::ParameterLayout OctaFuzzAudioProcessor::createParameterLayout()
+{
+  std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
+
+  params.push_back (std::make_unique<juce::AudioParameterFloat>
+                    (juce::ParameterID { "FUZZ_AMOUNT", 1 },
+                     "Fuzz",
+                     juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f),
+                     0.5f
+                     )
+                    );
+  
+  return { params.begin(), params.end() };
 }
