@@ -26,6 +26,8 @@ OctaFuzzAudioProcessor::OctaFuzzAudioProcessor()
 
 OctaFuzzAudioProcessor::~OctaFuzzAudioProcessor()
 {
+  // 모노(1채널), 4배 오버샘플링(factor 2 = 2^2), 최고급 필터 사용
+  oversampler = std::make_unique<juce::dsp::Oversampling<float>>(1, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
 }
 
 //==============================================================================
@@ -93,8 +95,21 @@ void OctaFuzzAudioProcessor::changeProgramName (int index, const juce::String& n
 //==============================================================================
 void OctaFuzzAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+  const auto numChannels = juce::jmax(1, getTotalNumInputChannels());
+  
+  oversampler = std::make_unique<juce::dsp::Oversampling<float>>
+  (
+   numChannels,
+   2,
+   juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR
+  );
+  
+  oversampler->initProcessing(static_cast<size_t>(samplesPerBlock));
+  oversampler->reset();
+  
+  double oversampledRate = sampleRate * oversampler->getOversamplingFactor();
+  
+  fuzzModule.prepare(oversampledRate);
 }
 
 void OctaFuzzAudioProcessor::releaseResources()
@@ -131,31 +146,24 @@ bool OctaFuzzAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
 
 void OctaFuzzAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
-    juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
-
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
-
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
-
-        // ..do something to the data...
-    }
+  
+  juce::ScopedNoDenormals noDenormals;
+  
+  float currentFuzzAmount = 0.8f;
+  fuzzModule.setParameter(currentFuzzAmount);
+  
+  juce::dsp::AudioBlock<float> audioBlock(buffer);
+  
+  juce::dsp::AudioBlock<float> upsampledBlock = oversampler->processSamplesUp(audioBlock);
+  
+  float* channelData = upsampledBlock.getChannelPointer(0);
+  int numSamples = static_cast<int>(upsampledBlock.getNumSamples());
+  
+  for (int i = 0; i < numSamples; ++i) {
+    channelData[i] = fuzzModule.processSample(channelData[i]);
+  }
+  
+  oversampler->processSamplesDown(audioBlock);
 }
 
 //==============================================================================
