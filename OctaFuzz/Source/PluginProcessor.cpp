@@ -142,21 +142,40 @@ void OctaFuzzAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
 {
   
   juce::ScopedNoDenormals noDenormals;
+
+  auto totalNumInputChannels  = getTotalNumInputChannels();
+  auto totalNumOutputChannels = getTotalNumOutputChannels();
   
-  float currentFuzzAmount = 0.8f;
-  fuzzModule.setParameter(currentFuzzAmount);
+  // 입력보다 출력이 많을 때(예: 모노 인 -> 스테레오 아웃) 빈 채널 잡음 방지
+  for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+    buffer.clear (i, 0, buffer.getNumSamples());
   
-  juce::dsp::AudioBlock<float> audioBlock(buffer);
-  
-  juce::dsp::AudioBlock<float> upsampledBlock = oversampler->processSamplesUp(audioBlock);
-  
-  float* channelData = upsampledBlock.getChannelPointer(0);
-  int numSamples = static_cast<int>(upsampledBlock.getNumSamples());
-  
-  for (int i = 0; i < numSamples; ++i) {
-    channelData[i] = fuzzModule.processSample(channelData[i]);
+  // APVTS에서 실시간 파라미터 값 읽기
+  auto* fuzzParam = apvts.getRawParameterValue ("FUZZ_AMOUNT");
+  if (fuzzParam != nullptr)
+  {
+    fuzzModule.setParameter (fuzzParam->load());
   }
   
+  // 버퍼 래핑 및 오버샘플링 업샘플
+  juce::dsp::AudioBlock<float> audioBlock (buffer);
+  juce::dsp::AudioBlock<float> upsampledBlock = oversampler->processSamplesUp (audioBlock);
+  
+  size_t numChannels = upsampledBlock.getNumChannels();
+  size_t numSamples  = upsampledBlock.getNumSamples();
+  
+  // 모든 오디오 채널(L, R)에 걸쳐 Fuzz 처리 수행
+  for (size_t channel = 0; channel < numChannels; ++channel)
+  {
+    auto* channelData = upsampledBlock.getChannelPointer (channel);
+    
+    for (size_t sample = 0; sample < numSamples; ++sample)
+    {
+      channelData[sample] = fuzzModule.processSample (channelData[sample]);
+    }
+  }
+  
+  // 원래 샘플레이트로 다운샘플
   oversampler->processSamplesDown(audioBlock);
 }
 
